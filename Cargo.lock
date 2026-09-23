@@ -1698,6 +1698,7 @@ dependencies = [
  "clap",
  "env_logger",
  "kmerutils",
+ "log",
  "needletail",
  "num",
  "num-traits",
@@ -1712,7 +1713,7 @@ dependencies = [
 [[package]]
 name = "rust-diskann"
 version = "0.4.2"
-source = "git+https://github.com/jianshu93/rust-diskann?rev=1450b51c0094ddfe0b0af5afada266ad53a07aa8#1450b51c0094ddfe0b0af5afada266ad53a07aa8"
+source = "git+https://github.com/jianshu93/rust-diskann#1450b51c0094ddfe0b0af5afada266ad53a07aa8"
 dependencies = [
  "anndists",
  "bincode",

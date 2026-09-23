@@ -42,13 +42,13 @@ fn update_beam_arg() -> Arg {
 fn build_cli() -> Command {
     Command::new("aeon")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("efficient and robust genome similarity search with evolving disk-based proximity graphs")
+        .about("Efficient and robust genome similarity search with evolving disk-based proximity graphs")
         .long_about("Build and search mmap-backed genome sketch indexes. Insertions and MERIT deletions run in a temporary dynamic workspace and are committed back to the ordinary static DiskANN format.")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(
             Command::new("todisk")
-                .about("Build a new static genome search index")
+                .about("Build a new static diskANN index using vamana graph algorithm")
                 .long_about("Sketch every sequence file in the reference list, construct a Vamana graph, and write the static mmap-searchable index plus its genome-name mapping and parameter metadata.")
                 .arg(prefix_arg())
                 .arg(
@@ -155,7 +155,7 @@ fn build_cli() -> Command {
         )
         .subcommand(
             Command::new("delete")
-                .about("Delete genomes with MERIT graph repair")
+                .about("Delete genomes with MERIT graph repair and version invalidation")
                 .long_about("Delete exact stored genome names, repair affected graph neighborhoods with MERIT, compact vector IDs, and commit an ordinary static index. Sequence files are not read during deletion.")
                 .arg(prefix_arg())
                 .arg(
@@ -171,7 +171,7 @@ fn build_cli() -> Command {
         )
         .subcommand(
             Command::new("update")
-                .about("Delete and insert genomes in one transaction")
+                .about("Delete old genome sketch vectors in vamana graph and then insert new genomes in one transaction")
                 .long_about("Apply MERIT deletion and Vamana insertion in one temporary update session, then perform one compact static commit. A deleted path may be reinserted in the same command.")
                 .arg(prefix_arg())
                 .arg(
@@ -234,7 +234,9 @@ fn build_cli() -> Command {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+    println!("\n ************** initializing logger *****************\n");
     let _ = env_logger::Builder::from_default_env().try_init();
+    log::info!("Logger initialized from default environment");
     let matches = build_cli().get_matches();
     let (command, args) = matches.subcommand().expect("subcommand is required");
     init_rayon_global(requested_threads(args));
