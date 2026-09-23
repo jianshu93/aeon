@@ -28,7 +28,7 @@ Run `aeon COMMAND --help` for the full description of any command and its option
 
 ```bash
 aeon todisk \
-  --prefix streptomyces \
+  --prefix index_out \
   --reference-list genomes.txt \
   --kmer-size 16 \
   --sketch-size 12000 \
@@ -38,10 +38,10 @@ aeon todisk \
 
 This creates:
 
-- `streptomyces.diskann`: static mmap-searchable DiskANN index.
-- `streptomyces.genomes.txt`: genome names in current vector-ID order.
-- `streptomyces.idmap.tsv`: vector ID to genome name mapping.
-- `streptomyces.params.json`: sketch and graph parameters.
+- `index_out.diskann`: static mmap-searchable DiskANN index.
+- `index_out.genomes.txt`: genome names in current vector-ID order.
+- `index_out.idmap.tsv`: vector ID to genome name mapping.
+- `index_out.params.json`: sketch and graph parameters.
 
 Important build options:
 
@@ -62,7 +62,7 @@ Important build options:
 The insertion list must contain paths to genome files. Aeon sketches them with the database's original parameters.
 
 ```bash
-aeon insert --prefix streptomyces --genome-list insert.txt
+aeon insert --prefix index_out --genome-list insert.txt
 ```
 
 `--beam-width` controls candidate exploration while connecting inserted genomes. It defaults to the original build beam stored in `PREFIX.params.json`; increasing it may improve graph quality at the cost of update time.
@@ -72,7 +72,7 @@ aeon insert --prefix streptomyces --genome-list insert.txt
 Deletion does not read or sketch genomes. Every line must exactly match a name stored in `PREFIX.genomes.txt`.
 
 ```bash
-aeon delete --prefix streptomyces --name-list delete.txt
+aeon delete --prefix index_out --name-list delete.txt
 ```
 
 Aeon uses MERIT versioned-edge invalidation and local repair, then removes dynamic version state while committing the updated ordinary static index.
@@ -85,7 +85,7 @@ Delete and insert in one update session and one static commit:
 
 ```bash
 aeon update \
-  --prefix streptomyces \
+  --prefix index_out \
   --delete-list delete.txt \
   --insert-list insert.txt
 ```
@@ -98,7 +98,7 @@ A path may be deleted and reinserted in the same command. Names that remain in t
 
 ```bash
 aeon search \
-  --prefix streptomyces \
+  --prefix index_out \
   --query-list queries.txt \
   --k 10 \
   --beam-width 512 \
