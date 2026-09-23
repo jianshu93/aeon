@@ -23,4 +23,5 @@ kmerutils = { git = "https://github.com/jianshu93/kmerutils", features = ["stdsi
 anndists = { version = "0.1.4", features = ["stdsimd"] }
 # anndists = { git = "https://github.com/jianshu93/anndists", features = ["stdsimd"] }
 xxhash-rust = { version = "0.8", features = [ "std", "xxh3" ] }
-rust-diskann = { git = "https://github.com/jianshu93/rust-diskann", rev = "1450b51c0094ddfe0b0af5afada266ad53a07aa8" }
+rust-diskann = { git = "https://github.com/jianshu93/rust-diskann" }
+# rust-diskann = { git = "https://github.com/jianshu93/rust-diskann", rev = "1450b51c0094ddfe0b0af5afada266ad53a07aa8" }
