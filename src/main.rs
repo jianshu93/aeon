@@ -48,7 +48,7 @@ fn build_cli() -> Command {
         .arg_required_else_help(true)
         .subcommand(
             Command::new("todisk")
-                .about("Build a new static diskANN index using vamana graph algorithm")
+                .about("Build a new static diskANN index using the Vamana graph construction algorithm")
                 .long_about("Sketch every sequence file in the reference list, construct a Vamana graph, and write the static mmap-searchable index plus its genome-name mapping and parameter metadata.")
                 .arg(prefix_arg())
                 .arg(
@@ -139,7 +139,7 @@ fn build_cli() -> Command {
         )
         .subcommand(
             Command::new("insert")
-                .about("Insert new genomes into an existing index")
+                .about("Insert sketch vectors into an existing diskANN index after sketching new genomes")
                 .long_about("Sketch new genome files with the original database parameters, connect them to a temporary dynamic Vamana graph, and commit a compact static index.")
                 .arg(prefix_arg())
                 .arg(
@@ -148,15 +148,15 @@ fn build_cli() -> Command {
                         .short('i')
                         .required(true)
                         .value_name("FILE")
-                        .help("Text file containing one new genome FASTA/FASTQ path per line"),
+                        .help("Text file containing new genome FASTA/FASTQ file paths to sketch and then insert, one per line"),
                 )
                 .arg(update_beam_arg())
                 .arg(threads_arg()),
         )
         .subcommand(
             Command::new("delete")
-                .about("Delete genomes with MERIT graph repair and version invalidation")
-                .long_about("Delete exact stored genome names, repair affected graph neighborhoods with MERIT, compact vector IDs, and commit an ordinary static index. Sequence files are not read during deletion.")
+                .about("Delete sketch vectors in the diskANN index with MERIT graph repair and version invalidation")
+                .long_about("Delete sketch vectors with the exact stored genome names, repair affected graph neighborhoods with MERIT, compact vector IDs, and commit an ordinary static index. Sequence files are not read during deletion.")
                 .arg(prefix_arg())
                 .arg(
                     Arg::new("name_list")
@@ -171,7 +171,7 @@ fn build_cli() -> Command {
         )
         .subcommand(
             Command::new("update")
-                .about("Delete old genome sketch vectors in vamana graph and then insert new genomes in one transaction")
+                .about("Delete sketch vectors in vamana graph and then insert new sketch vectors in one transaction")
                 .long_about("Apply MERIT deletion and Vamana insertion in one temporary update session, then perform one compact static commit. A deleted path may be reinserted in the same command.")
                 .arg(prefix_arg())
                 .arg(
@@ -188,7 +188,7 @@ fn build_cli() -> Command {
                         .short('i')
                         .required(true)
                         .value_name("FILE")
-                        .help("Text file containing genome FASTA/FASTQ paths to insert"),
+                        .help("Text file containing genome FASTA/FASTQ paths to sketch and then insert"),
                 )
                 .arg(update_beam_arg())
                 .arg(threads_arg()),
