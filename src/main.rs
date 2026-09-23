@@ -195,8 +195,8 @@ fn build_cli() -> Command {
         )
         .subcommand(
             Command::new("search")
-                .about("Search query genomes against a static index")
-                .long_about("Sketch query genomes using parameters recovered from database metadata, search the mmap-backed static DiskANN graph in parallel, and report ranked neighbors as TSV.")
+                .about("Search query genomes against a static diskANN index")
+                .long_about("Sketch query genomes using parameters recovered from database metadata, search the mmap-backed static DiskANN graph in parallel, and report ranked neighbors.")
                 .arg(prefix_arg())
                 .arg(
                     Arg::new("query_list")
