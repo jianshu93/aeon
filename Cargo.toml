@@ -6,7 +6,13 @@ authors = ["Jianshu Zhao <jianshuzhao@yahoo.com>"]
 repository = "https://github.com/jianshu93/aeon"
 description = "Efficient and robust genome similarity search with evolving disk-based proximity graphs"
 license = "MIT"
-keywords = ["proxmity-grah", "minhash", "", "diskann", "vamana", "ANI"]
+keywords = ["proxmity-grah", "minhash", "", "diskann", "vamana", "lsh"]
+
+
+[[bin]]
+
+name = "aeon"
+path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
