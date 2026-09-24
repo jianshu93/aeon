@@ -24,6 +24,17 @@ Input lists contain one genome path or stored genome name per line. FASTA/FASTQ 
 
 Run `aeon COMMAND --help` for the full description of any command and its options. `--threads` defaults to all logical CPUs for every command.
 
+## Logging
+
+Logging is disabled by default. Set `RUST_LOG` when progress or debugging information is needed:
+
+```bash
+RUST_LOG=info aeon search --prefix streptomyces --query-list queries.txt
+RUST_LOG=debug aeon delete --prefix streptomyces --name-list delete.txt
+```
+
+`info` reports major sketch, build, update, commit, and search stages with elapsed time. `debug` additionally reports MERIT repair and internal graph-update summaries.
+
 ## Commands
 
 ### Build

@@ -1,6 +1,7 @@
 use needletail::{Sequence, parse_fastx_file};
 use num_traits::{NumCast, PrimInt, ToPrimitive};
 use rayon::prelude::*;
+use std::time::Instant;
 use xxhash_rust::xxh3::xxh3_64_with_seed;
 
 // DNA / base k-mer machinery
@@ -348,7 +349,16 @@ fn sketch_aa_with_kmer_dispatch_u16(
 }
 
 pub(crate) fn sketch_from_params(paths: &[String], params: &PrefixParams) -> Vec<Vec<u16>> {
-    match params.seq_type.as_str() {
+    let started = Instant::now();
+    log::debug!(
+        "sketching files={} seq_type={} kmer_size={} sketch_size={} densification={}",
+        paths.len(),
+        params.seq_type,
+        params.kmer_size,
+        params.sketch_size,
+        params.densification
+    );
+    let sketches = match params.seq_type.as_str() {
         "dna" => sketch_with_kmer_dispatch_u16(
             paths,
             params.kmer_size,
@@ -364,7 +374,13 @@ pub(crate) fn sketch_from_params(paths: &[String], params: &PrefixParams) -> Vec
             params.hash_seed,
         ),
         other => panic!("unknown sequence type in parameters: {other}"),
-    }
+    };
+    log::debug!(
+        "sketching complete files={} elapsed_ms={}",
+        paths.len(),
+        started.elapsed().as_millis()
+    );
+    sketches
 }
 
 // Database operations, CLI parsing, and process orchestration live in their

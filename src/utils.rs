@@ -12,6 +12,7 @@ pub(crate) fn init_rayon_global(threads: usize) {
             .build_global()
             .expect("failed to initialize the global Rayon thread pool");
     });
+    log::debug!("Rayon thread pool ready threads={threads}");
 }
 
 pub(crate) fn requested_threads(matches: &clap::ArgMatches) -> usize {

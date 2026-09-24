@@ -1,4 +1,5 @@
 use anndists::dist::DistHamming;
+use log::{debug, info};
 use rayon::prelude::*;
 use rust_diskann::{DiskANN, DiskAnnParams};
 use std::collections::{HashMap, HashSet};
@@ -6,6 +7,7 @@ use std::error::Error;
 use std::fs::{self, File};
 use std::io::{self, BufWriter, Write};
 use std::path::Path;
+use std::time::Instant;
 
 use crate::metadata::{
     PrefixParams, genomes_path, idmap_path, index_path, load_params, save_params,
@@ -18,10 +20,22 @@ pub(crate) fn build_database(
     reference_list: &str,
     params: PrefixParams,
 ) -> Result<(), Box<dyn Error>> {
+    let started = Instant::now();
     let genomes = read_list_file(reference_list)?;
     if genomes.is_empty() {
         return Err("reference list is empty".into());
     }
+
+    info!(
+        "building database prefix={} genomes={} seq_type={} kmer_size={} sketch_size={} max_degree={} build_beam={}",
+        prefix,
+        genomes.len(),
+        params.seq_type,
+        params.kmer_size,
+        params.sketch_size,
+        params.max_degree,
+        params.build_beam_width
+    );
     let mut unique = HashSet::with_capacity(genomes.len());
     for genome in &genomes {
         if !unique.insert(genome.as_str()) {
@@ -51,10 +65,11 @@ pub(crate) fn build_database(
     write_genome_list(&genomes_path(prefix), &genomes)?;
     write_idmap_tsv(&idmap_path(prefix), &genomes)?;
     save_params(prefix, &params)?;
-    eprintln!(
-        "Built {} with {} genomes",
-        index_path(prefix),
-        genomes.len()
+    info!(
+        "database build complete prefix={} genomes={} elapsed_ms={}",
+        prefix,
+        genomes.len(),
+        started.elapsed().as_millis()
     );
     Ok(())
 }
@@ -65,6 +80,7 @@ pub(crate) fn update_database(
     delete_names: Vec<String>,
     beam_width: Option<usize>,
 ) -> Result<(), Box<dyn Error>> {
+    let started = Instant::now();
     if insert_paths.is_empty() && delete_names.is_empty() {
         return Err("update contains neither insertions nor deletions".into());
     }
@@ -111,6 +127,14 @@ pub(crate) fn update_database(
     let capacity = old_genomes.len().max(final_count);
     let work_path = format!("{prefix}.aeon-work-{}", std::process::id());
     let temporary_index = format!("{}.aeon-next-{}", index_path(prefix), std::process::id());
+    info!(
+        "updating database prefix={} current={} delete={} insert={} final={}",
+        prefix,
+        old_genomes.len(),
+        delete_ids.len(),
+        insertion_count,
+        final_count
+    );
     let mut update = source.begin_updates(capacity, params.alpha, &work_path)?;
     let mut slot_names = old_genomes.into_iter().map(Some).collect::<Vec<_>>();
     slot_names.resize(capacity, None);
@@ -122,7 +146,7 @@ pub(crate) fn update_database(
         }
         let recovered: usize = stats.iter().map(|stat| stat.recovered_in_neighbors).sum();
         let candidates: usize = stats.iter().map(|stat| stat.repair_candidates).sum();
-        eprintln!(
+        debug!(
             "Deleted {} genomes; MERIT averages: {:.2} recovered in-neighbors, {:.2} repair candidates",
             stats.len(),
             recovered as f64 / stats.len() as f64,
@@ -135,7 +159,7 @@ pub(crate) fn update_database(
         for (id, name) in inserted_ids.into_iter().zip(insert_paths) {
             slot_names[id as usize] = Some(name);
         }
-        eprintln!("Inserted {insertion_count} genomes with beam width {beam}");
+        debug!("inserted {insertion_count} genomes with beam width {beam}");
     }
 
     let (committed, old_to_new) = update.commit_updates_to_static(&temporary_index)?;
@@ -149,10 +173,11 @@ pub(crate) fn update_database(
     let new_genomes = rebuild_genome_order(&slot_names, &old_to_new, final_count)?;
     drop(committed);
     install_updated_files(prefix, &temporary_index, &new_genomes)?;
-    eprintln!(
-        "Committed static index {} with {} genomes",
-        index_path(prefix),
-        new_genomes.len()
+    info!(
+        "database update complete prefix={} genomes={} elapsed_ms={}",
+        prefix,
+        new_genomes.len(),
+        started.elapsed().as_millis()
     );
     Ok(())
 }
@@ -164,12 +189,21 @@ pub(crate) fn search_database(
     beam: usize,
     output_path: Option<&str>,
 ) -> Result<(), Box<dyn Error>> {
+    let started = Instant::now();
     let params = load_params(prefix)?;
     let references = read_list_file(&genomes_path(prefix))?;
     let queries = read_list_file(query_list)?;
     if queries.is_empty() {
         return Err("query list is empty".into());
     }
+    info!(
+        "searching database prefix={} queries={} references={} k={} beam={}",
+        prefix,
+        queries.len(),
+        references.len(),
+        k,
+        beam
+    );
     let vectors = sketch_from_params(&queries, &params);
     let index = DiskANN::<u16, DistHamming>::open_index_with(&index_path(prefix), DistHamming)?;
     if index.num_vectors != references.len() {
@@ -185,6 +219,12 @@ pub(crate) fn search_database(
         None => Box::new(BufWriter::new(io::stdout())),
     };
     write_search_results(output, &queries, &hits, &references)?;
+    info!(
+        "search complete prefix={} queries={} elapsed_ms={}",
+        prefix,
+        queries.len(),
+        started.elapsed().as_millis()
+    );
     Ok(())
 }
 
@@ -278,10 +318,10 @@ fn sanity_check_index_mapping(
     let beam = build_beam_width.max(64);
     for (id, vector) in vectors.iter().take(checks).enumerate() {
         match index.search_with_dists(vector, 1, beam).first().copied() {
-            Some((found, distance)) => {
-                eprintln!("SANITY: ref vec {id} -> nearest id {found} (dist={distance:.6})")
-            }
-            None => eprintln!("SANITY: ref vec {id} -> search returned no neighbors"),
+            Some((found, distance)) => debug!(
+                "index mapping check reference_id={id} nearest_id={found} distance={distance:.6}"
+            ),
+            None => debug!("index mapping check reference_id={id} returned no neighbors"),
         }
     }
 }
