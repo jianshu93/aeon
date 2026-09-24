@@ -26,14 +26,16 @@ Run `aeon COMMAND --help` for the full description of any command and its option
 
 ## Logging
 
-Logging is disabled by default. Set `RUST_LOG` when progress or debugging information is needed:
+Aeon writes a small number of plain progress messages directly to stderr, including how many genomes were sketched, inserted, deleted, or searched. These messages do not use the logging framework and never mix with TSV search results written to stdout.
+
+During DNA or amino-acid sketching, Aeon prints progress after every 1,000 completed genomes and once at completion.
 
 ```bash
-RUST_LOG=info aeon search --prefix streptomyces --query-list queries.txt
 RUST_LOG=debug aeon delete --prefix streptomyces --name-list delete.txt
+RUST_LOG=rust_diskann=debug aeon delete --prefix streptomyces --name-list delete.txt
 ```
 
-`info` reports major sketch, build, update, commit, and search stages with elapsed time. `debug` additionally reports MERIT repair and internal graph-update summaries.
+Optional `RUST_LOG` settings add debugging details; they do not control the plain progress messages.
 
 ## Commands
 

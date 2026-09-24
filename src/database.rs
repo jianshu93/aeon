@@ -1,5 +1,5 @@
 use anndists::dist::DistHamming;
-use log::{debug, info};
+use log::debug;
 use rayon::prelude::*;
 use rust_diskann::{DiskANN, DiskAnnParams};
 use std::collections::{HashMap, HashSet};
@@ -26,8 +26,8 @@ pub(crate) fn build_database(
         return Err("reference list is empty".into());
     }
 
-    info!(
-        "building database prefix={} genomes={} seq_type={} kmer_size={} sketch_size={} max_degree={} build_beam={}",
+    eprintln!(
+        "Building database: prefix={}, genomes={}, seq_type={}, k={}, sketch_size={}, R={}, build_beam={}",
         prefix,
         genomes.len(),
         params.seq_type,
@@ -65,11 +65,11 @@ pub(crate) fn build_database(
     write_genome_list(&genomes_path(prefix), &genomes)?;
     write_idmap_tsv(&idmap_path(prefix), &genomes)?;
     save_params(prefix, &params)?;
-    info!(
-        "database build complete prefix={} genomes={} elapsed_ms={}",
+    eprintln!(
+        "Built database: prefix={}, genomes={}, elapsed={:.3}s",
         prefix,
         genomes.len(),
-        started.elapsed().as_millis()
+        started.elapsed().as_secs_f64()
     );
     Ok(())
 }
@@ -127,8 +127,8 @@ pub(crate) fn update_database(
     let capacity = old_genomes.len().max(final_count);
     let work_path = format!("{prefix}.aeon-work-{}", std::process::id());
     let temporary_index = format!("{}.aeon-next-{}", index_path(prefix), std::process::id());
-    info!(
-        "updating database prefix={} current={} delete={} insert={} final={}",
+    eprintln!(
+        "Updating database: prefix={}, current={}, delete={}, insert={}, final={}",
         prefix,
         old_genomes.len(),
         delete_ids.len(),
@@ -152,6 +152,7 @@ pub(crate) fn update_database(
             recovered as f64 / stats.len() as f64,
             candidates as f64 / stats.len() as f64
         );
+        eprintln!("Deleted {} genomes", stats.len());
     }
     if !insert_vectors.is_empty() {
         let beam = beam_width.unwrap_or(params.build_beam_width);
@@ -159,7 +160,7 @@ pub(crate) fn update_database(
         for (id, name) in inserted_ids.into_iter().zip(insert_paths) {
             slot_names[id as usize] = Some(name);
         }
-        debug!("inserted {insertion_count} genomes with beam width {beam}");
+        eprintln!("Inserted {insertion_count} genomes with beam {beam}");
     }
 
     let (committed, old_to_new) = update.commit_updates_to_static(&temporary_index)?;
@@ -173,11 +174,11 @@ pub(crate) fn update_database(
     let new_genomes = rebuild_genome_order(&slot_names, &old_to_new, final_count)?;
     drop(committed);
     install_updated_files(prefix, &temporary_index, &new_genomes)?;
-    info!(
-        "database update complete prefix={} genomes={} elapsed_ms={}",
+    eprintln!(
+        "Updated database: prefix={}, genomes={}, elapsed={:.3}s",
         prefix,
         new_genomes.len(),
-        started.elapsed().as_millis()
+        started.elapsed().as_secs_f64()
     );
     Ok(())
 }
@@ -196,8 +197,8 @@ pub(crate) fn search_database(
     if queries.is_empty() {
         return Err("query list is empty".into());
     }
-    info!(
-        "searching database prefix={} queries={} references={} k={} beam={}",
+    eprintln!(
+        "Searching database: prefix={}, queries={}, references={}, k={}, beam={}",
         prefix,
         queries.len(),
         references.len(),
@@ -219,11 +220,10 @@ pub(crate) fn search_database(
         None => Box::new(BufWriter::new(io::stdout())),
     };
     write_search_results(output, &queries, &hits, &references)?;
-    info!(
-        "search complete prefix={} queries={} elapsed_ms={}",
-        prefix,
+    eprintln!(
+        "Searched {} queries in {:.3}s",
         queries.len(),
-        started.elapsed().as_millis()
+        started.elapsed().as_secs_f64()
     );
     Ok(())
 }

@@ -1,6 +1,7 @@
 use needletail::{Sequence, parse_fastx_file};
 use num_traits::{NumCast, PrimInt, ToPrimitive};
 use rayon::prelude::*;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Instant;
 use xxhash_rust::xxh3::xxh3_64_with_seed;
 
@@ -65,6 +66,8 @@ where
     Sketcher: SeqSketcherT<Kmer, Sig = u16> + Sync,
     F: Fn(&Kmer) -> <Kmer as CompressedKmerT>::Val + Send + Sync + Copy,
 {
+    let completed = AtomicUsize::new(0);
+    let total = file_paths.len();
     // We keep a local Vec<(original_index, signature)> and then sort by index
     // to guarantee that final vectors follow file_paths order exactly.
     let mut indexed: Vec<(usize, Vec<u16>)> = file_paths
@@ -91,6 +94,11 @@ where
                 .cloned()
                 .unwrap_or_else(|| panic!("sketcher returned empty signature for {path}"));
 
+            let done = completed.fetch_add(1, Ordering::Relaxed) + 1;
+            if done % 1000 == 0 {
+                eprintln!("Sketched {done}/{total} genomes");
+            }
+
             (i, sig_u16)
         })
         .collect();
@@ -114,6 +122,8 @@ where
     Sketcher: SeqSketcherAAT<Kmer, Sig = u16> + Sync,
     F: Fn(&Kmer) -> <Kmer as CompressedKmerT>::Val + Send + Sync + Copy,
 {
+    let completed = AtomicUsize::new(0);
+    let total = file_paths.len();
     let mut indexed: Vec<(usize, Vec<u16>)> = file_paths
         .par_iter()
         .enumerate()
@@ -139,6 +149,11 @@ where
                 .first()
                 .cloned()
                 .unwrap_or_else(|| panic!("sketcher returned empty signature for {path}"));
+
+            let done = completed.fetch_add(1, Ordering::Relaxed) + 1;
+            if done % 1000 == 0 {
+                eprintln!("Sketched {done}/{total} genomes");
+            }
 
             (i, sig_u16)
         })
@@ -375,10 +390,11 @@ pub(crate) fn sketch_from_params(paths: &[String], params: &PrefixParams) -> Vec
         ),
         other => panic!("unknown sequence type in parameters: {other}"),
     };
-    log::debug!(
-        "sketching complete files={} elapsed_ms={}",
+    eprintln!(
+        "Sketched {}/{} genomes in {:.3}s",
         paths.len(),
-        started.elapsed().as_millis()
+        paths.len(),
+        started.elapsed().as_secs_f64()
     );
     sketches
 }

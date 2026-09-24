@@ -234,11 +234,13 @@ fn build_cli() -> Command {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+    println!("\n ************** initializing logger *****************\n");
     let _ = env_logger::Builder::from_default_env().try_init();
+    log::info!("Logger initialized from default environment");
     let matches = build_cli().get_matches();
     let (command, args) = matches.subcommand().expect("subcommand is required");
     init_rayon_global(requested_threads(args));
-    log::info!("starting command={command}");
+    eprintln!("Running aeon {command}");
 
     match command {
         "todisk" => build_database(
