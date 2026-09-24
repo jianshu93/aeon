@@ -2,7 +2,7 @@
 
 
 
-# Aeon (/ˈiːən/): efficient and robust genome similarity search with evolving disk-based proximity graphs
+# Aeon (/ˈiːɒn/): efficient and robust genome similarity search with evolving disk-based proximity graphs
 
 
 
