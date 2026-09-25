@@ -132,13 +132,31 @@ where
             let mut reader =
                 parse_fastx_file(path).unwrap_or_else(|e| panic!("Invalid FASTA/Q {path}: {e}"));
 
+            let mut record_num = 0_u64;
             while let Some(record) = reader.next() {
                 let rec = record.unwrap_or_else(|e| panic!("Error reading record in {path}: {e}"));
                 // For AA we do NOT normalize as DNA; use raw sequence bytes.
                 let seq_bytes = rec.seq();
+                let sequence_id = String::from_utf8_lossy(rec.id());
+                if seq_bytes.is_empty() {
+                    eprintln!(
+                        "ERROR: sequence of null length, file: {path:?}, record num: {record_num}, sequence id: {sequence_id}"
+                    );
+                    record_num += 1;
+                    continue;
+                }
+
                 let seq = ascii_to_seq_aa(&seq_bytes)
                     .unwrap_or_else(|_| panic!("AA parse error in {path}"));
+                if seq.is_empty() {
+                    eprintln!(
+                        "ERROR: null encoded sequence, file: {path:?}, record num: {record_num}, sequence id: {sequence_id}"
+                    );
+                    record_num += 1;
+                    continue;
+                }
                 sequences.push(seq);
+                record_num += 1;
             }
 
             let sequences_ref: Vec<&SequenceAA> = sequences.iter().collect();
@@ -401,3 +419,15 @@ pub(crate) fn sketch_from_params(paths: &[String], params: &PrefixParams) -> Vec
 
 // Database operations, CLI parsing, and process orchestration live in their
 // own modules. This module only owns sequence parsing and sketch generation.
+
+#[cfg(test)]
+mod tests {
+    use super::ascii_to_seq_aa;
+
+    #[test]
+    fn aa_conversion_exposes_empty_and_fully_filtered_records() {
+        assert!(ascii_to_seq_aa(b"").unwrap().is_empty());
+        assert!(ascii_to_seq_aa(b"***XXX---").unwrap().is_empty());
+        assert!(!ascii_to_seq_aa(b"MTEQIELIK").unwrap().is_empty());
+    }
+}
