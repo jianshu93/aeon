@@ -150,6 +150,13 @@ Apple Silicon M4 Max benchmark on 2,799 RefSeq Streptomycetaceae genomes (6.4 GB
 | Search peak RSS | 394 MiB | 571 MiB | aeon 31% lower |
 | Top-1 zero-distance matches | 100/100 | 100/100 | equal |
 
+For the larger GTDB-NT search benchmark, the database contained 199,923 representative genomes. Both indexes used DNA k=16, OPTDENS sketches of 12,000 `u16` values, graph degree 128, and 8 search threads. Aeon used search beam 512; GSearch used its stored HNSW `ef=1600` configuration. Values below are medians from three warm mmap runs of the same 100 query genomes on an Apple Silicon M4 Max:
+
+| Search 100 genomes against GTDB-NT | aeon | GSearch | Comparison |
+|---|---:|---:|---:|
+| Wall time | 0.89 s | 6.92 s | aeon 7.78x faster |
+| Peak RSS | 4.44 GiB | 5.17 GiB | aeon 14% lower |
+
 A combined 1% replacement (28 MERIT deletions followed by 28 insertions and one static commit) took 4.53 seconds with 222 MiB peak RSS. This was 11.1x faster than rebuilding the aeon database, and all 28 replacement queries returned a zero-distance top hit.
 
 ## References
