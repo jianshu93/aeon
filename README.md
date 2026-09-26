@@ -1,5 +1,5 @@
 
-# [Aeon](https://dictionary.cambridge.org/us/dictionary/english/aeon) (/ˈiːɒn/) ([listen](assets/audio/aeon.mp3)): efficient and robust genome similarity search with evolving disk-based proximity graphs
+# [Aeon](https://dictionary.cambridge.org/us/dictionary/english/aeon) (/ˈiːɒn/) : efficient and robust genome similarity search with evolving disk-based proximity graphs
 
 ***"Built once, updated forever. Nodes and edges evolve like cells, while Aeon remains eternal."***
 
