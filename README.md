@@ -1,5 +1,5 @@
 
-# Aeon (/ˈiːɒn/) ([listen](assets/audio/aeon.mp3)): efficient and robust genome similarity search with evolving disk-based proximity graphs
+# Aeon (/ˈiːɒn/) ([hear pronunciation](assets/audio/aeon.mp3?raw=1)): efficient and robust genome similarity search with evolving disk-based proximity graphs
 
 ***"Built once, updated forever. Nodes and edges evolve like cells, while Aeon remains eternal."***
 
