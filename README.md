@@ -1,3 +1,7 @@
+<div align="center">
+  <img width="45%" src ="aeon-logo.png">
+</div>
+
 
 # [Aeon](https://dictionary.cambridge.org/us/dictionary/english/aeon) (/ˈiːɒn/) : efficient and robust genome similarity search with evolving disk-based proximity graphs 🦀
 
