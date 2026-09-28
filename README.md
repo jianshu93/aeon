@@ -85,7 +85,7 @@ Deletion does not read or sketch genomes. Every line must exactly match a name s
 aeon delete --prefix index_out --name-list delete.txt
 ```
 
-Aeon first performs routability-aware deletion admission control in the temporary update workspace. It virtually masks the proposed batch, checks whether the same residual entry point can still reach a small dispersed landmark set, and applies MERIT versioned-edge invalidation and local repair only when no previously reachable landmark route is lost. A deferred batch leaves the existing static database unchanged and reports the affected landmark IDs; split that deletion list or schedule a rebuild. This is a lightweight navigability safeguard, not a formal Recall@k guarantee.
+Aeon's `rust-diskann` update session enables routability-aware deletion admission control by default. Aeon reads that built-in guard rather than initializing a second one. It virtually masks the proposed batch, checks whether the same residual entry point can still reach a small dispersed landmark set, and applies MERIT versioned-edge invalidation and local repair only when no previously reachable landmark route is lost. A deferred batch leaves the existing static database unchanged and reports the affected landmark IDs; split that deletion list or schedule a rebuild. This is a lightweight navigability safeguard, not a formal Recall@k guarantee.
 
 After an admitted deletion, Aeon removes dynamic version state while committing the updated ordinary static index.
 
@@ -104,7 +104,7 @@ aeon update \
 
 A path may be deleted and reinserted in the same command. Names that remain in the database cannot be inserted again.
 
-`--beam-width` has the same meaning as for `insert`. Before either `delete` or `update` mutates graph data, Aeon runs the same routability admission check. When it defers a batch, neither the deletion nor the pending insertion is committed. Admitted deletions use the rust-diskann MERIT defaults (`repair beam = 2R`, `k_r = 2`).
+`--beam-width` has the same meaning as for `insert`. Before either `delete` or `update` mutates graph data, Aeon uses rust-diskann's default routability admission check. When it defers a batch, neither the deletion nor the pending insertion is committed. Admitted deletions use the rust-diskann MERIT defaults (`repair beam = 2R`, `k_r = 2`).
 
 ### Search
 

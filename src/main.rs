@@ -156,7 +156,7 @@ fn build_cli() -> Command {
         .subcommand(
             Command::new("delete")
                 .about("Delete sketch vectors from Vamana graph with routability-aware MERIT graph repair")
-                .long_about("Before deleting exact stored genome names, Aeon virtually masks the requested batch and verifies that a small set of dispersed graph landmarks remains reachable. An admitted batch is repaired with MERIT, compacted, and committed as an ordinary static index. A deferred batch does not alter the database. Sequence files are not read during deletion.")
+                .long_about("The temporary DiskANN session starts with its default routability guard enabled. Before deleting exact stored genome names, Aeon virtually masks the requested batch and verifies that a small set of dispersed graph landmarks remains reachable. An admitted batch is repaired with MERIT, compacted, and committed as an ordinary static index. A deferred batch does not alter the database. Sequence files are not read during deletion.")
                 .arg(prefix_arg())
                 .arg(
                     Arg::new("name_list")
@@ -172,7 +172,7 @@ fn build_cli() -> Command {
         .subcommand(
             Command::new("update")
                 .about("Routability-guarded Vamana graph deletion and MERIT graph repair followed by insertion in one transaction")
-                .long_about("Virtually validate the requested deletion batch against dispersed graph landmarks, apply MERIT repair only when it is admitted, then insert new sketches in one temporary update session and perform one compact static commit. A deferred deletion leaves the database unchanged, so no insertion is applied. A deleted path may be reinserted in the same command.")
+                .long_about("The temporary DiskANN session starts with its default routability guard enabled. Virtually validate the requested deletion batch against dispersed graph landmarks, apply MERIT repair only when it is admitted, then insert new sketches in one temporary update session and perform one compact static commit. A deferred deletion leaves the database unchanged, so no insertion is applied. A deleted path may be reinserted in the same command.")
                 .arg(prefix_arg())
                 .arg(
                     Arg::new("delete_list")

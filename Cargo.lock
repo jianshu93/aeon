@@ -1829,7 +1829,7 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "rust-aeon"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "anndists",
  "clap",
@@ -1849,8 +1849,8 @@ dependencies = [
 
 [[package]]
 name = "rust-diskann"
-version = "0.4.3"
-source = "git+https://github.com/jianshu93/rust-diskann#28f4b065363e0e0fea71538358b02e8e69cb5dbf"
+version = "0.4.4"
+source = "git+https://github.com/jianshu93/rust-diskann#b37c93fb6bb13b6d3af98d81bf320d2cc71e21b3"
 dependencies = [
  "anndists",
  "bincode",

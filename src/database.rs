@@ -1,9 +1,7 @@
 use anndists::dist::DistHamming;
 use log::debug;
 use rayon::prelude::*;
-use rust_diskann::{
-    DiskANN, DiskAnnParams, GuardedDeleteResult, RoutabilityAdmissionReport, RoutabilityGuardConfig,
-};
+use rust_diskann::{DiskANN, DiskAnnParams, GuardedDeleteResult, RoutabilityAdmissionReport};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs::{self, File};
@@ -142,7 +140,15 @@ pub(crate) fn update_database(
     slot_names.resize(capacity, None);
 
     if !delete_ids.is_empty() {
-        let guard = update.enable_routability_guard(RoutabilityGuardConfig::default())?;
+        let guard = update.routability_guard_status()?;
+        if !guard.enabled {
+            drop(update);
+            discard_update_workspace(&work_path);
+            return Err(
+                "rust-diskann did not enable routability admission control for the update session"
+                    .into(),
+            );
+        }
         eprintln!(
             "Checking deletion routability: landmarks={}, pool={}, beam={}",
             guard.landmark_count, guard.landmark_pool_size, guard.beam_width
