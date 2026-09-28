@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="45%" src ="aeon-logo.png">
+  <img width="35%" src ="aeon-logo.png">
 </div>
 
 
