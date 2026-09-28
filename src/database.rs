@@ -1,7 +1,9 @@
 use anndists::dist::DistHamming;
 use log::debug;
 use rayon::prelude::*;
-use rust_diskann::{DiskANN, DiskAnnParams};
+use rust_diskann::{
+    DiskANN, DiskAnnParams, GuardedDeleteResult, RoutabilityAdmissionReport, RoutabilityGuardConfig,
+};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs::{self, File};
@@ -140,7 +142,27 @@ pub(crate) fn update_database(
     slot_names.resize(capacity, None);
 
     if !delete_ids.is_empty() {
-        let stats = update.delete_batch(&delete_ids)?;
+        let guard = update.enable_routability_guard(RoutabilityGuardConfig::default())?;
+        eprintln!(
+            "Checking deletion routability: landmarks={}, pool={}, beam={}",
+            guard.landmark_count, guard.landmark_pool_size, guard.beam_width
+        );
+        let stats = match update.delete_batch_with_admission_control(&delete_ids)? {
+            GuardedDeleteResult::Applied { stats, report } => {
+                eprintln!(
+                    "Deletion admission accepted: checked_landmarks={}, baseline_routes={}, residual_routes={}",
+                    report.checked_landmarks.len(),
+                    report.baseline_reachable_landmarks,
+                    report.residual_reachable_landmarks
+                );
+                stats
+            }
+            GuardedDeleteResult::Deferred(report) => {
+                drop(update);
+                discard_update_workspace(&work_path);
+                return Err(deferred_delete_error(&report));
+            }
+        };
         for id in &delete_ids {
             slot_names[*id as usize] = None;
         }
@@ -181,6 +203,29 @@ pub(crate) fn update_database(
         started.elapsed().as_secs_f64()
     );
     Ok(())
+}
+
+fn discard_update_workspace(work_path: &str) {
+    if let Err(error) = fs::remove_file(work_path) {
+        if error.kind() != io::ErrorKind::NotFound {
+            debug!(
+                "failed to remove deferred update workspace path={} error={}",
+                work_path, error
+            );
+        }
+    }
+}
+
+fn deferred_delete_error(report: &RoutabilityAdmissionReport) -> Box<dyn Error> {
+    format!(
+        "deletion deferred by routability-aware admission control: requested={}, checked_landmarks={}, baseline_routes={}, residual_routes={}, lost_landmark_ids={:?}; the database was not changed. Split the delete list or rebuild the index.",
+        report.requested,
+        report.checked_landmarks.len(),
+        report.baseline_reachable_landmarks,
+        report.residual_reachable_landmarks,
+        report.lost_landmarks
+    )
+    .into()
 }
 
 pub(crate) fn search_database(

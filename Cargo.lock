@@ -1001,7 +1001,7 @@ checksum = "3640c1c38b8e4e43584d8df18be5fc6b0aa314ce6ebf51b53313d4306cca8e46"
 dependencies = [
  "hermit-abi",
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1829,7 +1829,7 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "rust-aeon"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "anndists",
  "clap",
@@ -1849,8 +1849,8 @@ dependencies = [
 
 [[package]]
 name = "rust-diskann"
-version = "0.4.2"
-source = "git+https://github.com/jianshu93/rust-diskann#5b298d881d89b4bdd27cdfd004c5b089dee8a38c"
+version = "0.4.3"
+source = "git+https://github.com/jianshu93/rust-diskann#28f4b065363e0e0fea71538358b02e8e69cb5dbf"
 dependencies = [
  "anndists",
  "bincode",
@@ -2365,7 +2365,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

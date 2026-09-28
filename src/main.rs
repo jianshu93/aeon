@@ -139,7 +139,7 @@ fn build_cli() -> Command {
         )
         .subcommand(
             Command::new("insert")
-                .about("Insert sketch vectors into an existing diskANN index after sketching new genomes")
+                .about("Insert sketch vectors into an existing diskANN index/Vamana graph after sketching new genomes")
                 .long_about("Sketch new genome files with the original database parameters, connect them to a temporary dynamic Vamana graph, and commit a compact static index.")
                 .arg(prefix_arg())
                 .arg(
@@ -155,8 +155,8 @@ fn build_cli() -> Command {
         )
         .subcommand(
             Command::new("delete")
-                .about("Delete sketch vectors in the diskANN index with MERIT graph repair and version invalidation")
-                .long_about("Delete sketch vectors with the exact stored genome names, repair affected graph neighborhoods with MERIT, compact vector IDs, and commit an ordinary static index. Sequence files are not read during deletion.")
+                .about("Delete sketch vectors from Vamana graph with routability-aware MERIT graph repair")
+                .long_about("Before deleting exact stored genome names, Aeon virtually masks the requested batch and verifies that a small set of dispersed graph landmarks remains reachable. An admitted batch is repaired with MERIT, compacted, and committed as an ordinary static index. A deferred batch does not alter the database. Sequence files are not read during deletion.")
                 .arg(prefix_arg())
                 .arg(
                     Arg::new("name_list")
@@ -171,8 +171,8 @@ fn build_cli() -> Command {
         )
         .subcommand(
             Command::new("update")
-                .about("Delete sketch vectors in vamana graph and then insert new sketch vectors in one transaction")
-                .long_about("Apply MERIT deletion and Vamana insertion in one temporary update session, then perform one compact static commit. A deleted path may be reinserted in the same command.")
+                .about("Routability-guarded Vamana graph deletion and MERIT graph repair followed by insertion in one transaction")
+                .long_about("Virtually validate the requested deletion batch against dispersed graph landmarks, apply MERIT repair only when it is admitted, then insert new sketches in one temporary update session and perform one compact static commit. A deferred deletion leaves the database unchanged, so no insertion is applied. A deleted path may be reinserted in the same command.")
                 .arg(prefix_arg())
                 .arg(
                     Arg::new("delete_list")

@@ -85,7 +85,9 @@ Deletion does not read or sketch genomes. Every line must exactly match a name s
 aeon delete --prefix index_out --name-list delete.txt
 ```
 
-Aeon uses MERIT versioned-edge invalidation and local repair, then removes dynamic version state while committing the updated ordinary static index.
+Aeon first performs routability-aware deletion admission control in the temporary update workspace. It virtually masks the proposed batch, checks whether the same residual entry point can still reach a small dispersed landmark set, and applies MERIT versioned-edge invalidation and local repair only when no previously reachable landmark route is lost. A deferred batch leaves the existing static database unchanged and reports the affected landmark IDs; split that deletion list or schedule a rebuild. This is a lightweight navigability safeguard, not a formal Recall@k guarantee.
+
+After an admitted deletion, Aeon removes dynamic version state while committing the updated ordinary static index.
 
 `--name-list` must contain the complete stored strings from `PREFIX.genomes.txt`; matching is exact and basename-only matching is not performed.
 
@@ -102,7 +104,7 @@ aeon update \
 
 A path may be deleted and reinserted in the same command. Names that remain in the database cannot be inserted again.
 
-`--beam-width` has the same meaning as for `insert`. Deletions use the rust-diskann MERIT defaults (`repair beam = 2R`, `k_r = 2`).
+`--beam-width` has the same meaning as for `insert`. Before either `delete` or `update` mutates graph data, Aeon runs the same routability admission check. When it defers a batch, neither the deletion nor the pending insertion is committed. Admitted deletions use the rust-diskann MERIT defaults (`repair beam = 2R`, `k_r = 2`).
 
 ### Search
 
@@ -131,6 +133,7 @@ Search options:
 - Vector IDs may change after deletion because live records are compacted.
 - Aeon rebuilds `.genomes.txt` and `.idmap.tsv` from rust-diskann's old-to-new ID mapping after every update.
 - `insert`, `delete`, and `update` finish with the same static format produced by `todisk`.
+- `delete` and deletion-containing `update` commands are admitted only when the temporary landmark probe preserves every route that was reachable before the proposed batch; a deferred batch writes no replacement index.
 
 ## Benchmark
 
