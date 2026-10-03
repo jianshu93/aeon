@@ -93,6 +93,8 @@ aeon delete --prefix index_out --name-list delete.txt
 
 Aeon's `rust-diskann` update session enables routability-aware deletion admission control by default. Aeon reads that built-in guard rather than initializing a second one. It virtually masks the proposed batch, checks whether the same residual entry point can still reach a small dispersed landmark set, and applies MERIT versioned-edge invalidation and local repair only when no previously reachable landmark route is lost. A deferred batch leaves the existing static database unchanged and reports the affected landmark IDs; split that deletion list or schedule a rebuild. This is a lightweight navigability safeguard, not a formal Recall@k guarantee.
 
+For an admitted batch, rust-diskann groups MERIT's ordered directed repair operations by mutable Vamana adjacency row. Operations for one row remain sequential, while independent rows run through Aeon's Rayon pool; immutable Hamming distances are cached within each row queue. This preserves the exact per-edge RobustPrune decisions while avoiding conflict waves that can collapse delete parallelism on closely clustered genomes.
+
 After an admitted deletion, Aeon removes dynamic version state while committing the updated ordinary static index.
 
 Complete stored paths always match. A basename without directories is accepted only when it identifies exactly one stored genome. If the database contains the same filename under multiple paths, Aeon rejects the ambiguous basename and asks for the complete stored path.
