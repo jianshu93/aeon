@@ -310,12 +310,9 @@ fn resolve_delete_ids(genomes: &[String], names: &[String]) -> Result<Vec<u32>, 
                 }
             },
         };
-        if !seen_ids.insert(id) {
-            return Err(
-                format!("delete list refers to the same genome more than once: {name}").into(),
-            );
+        if seen_ids.insert(id) {
+            ids.push(id);
         }
-        ids.push(id);
     }
     Ok(ids)
 }
@@ -401,7 +398,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn delete_names_accept_unique_basenames_and_reject_ambiguous_ones() {
+    fn delete_names_accept_unique_basenames_deduplicate_and_reject_ambiguous_ones() {
         let genomes = vec![
             "/db/a.fna.gz".into(),
             "/db/b.fna.gz".into(),
@@ -416,7 +413,14 @@ mod tests {
             vec![1]
         );
         assert!(resolve_delete_ids(&genomes, &["a.fna.gz".into()]).is_err());
-        assert!(resolve_delete_ids(&genomes, &["/db/b.fna.gz".into(), "b.fna.gz".into()]).is_err());
+        assert_eq!(
+            resolve_delete_ids(
+                &genomes,
+                &["/db/b.fna.gz".into(), "b.fna.gz".into(), "b.fna.gz".into(),]
+            )
+            .unwrap(),
+            vec![1]
+        );
     }
 
     #[test]
