@@ -81,6 +81,8 @@ aeon insert --prefix index_out --genome-list insert.txt
 
 `--beam-width` controls candidate exploration while connecting inserted genomes. It defaults to the original build beam stored in `PREFIX.params.json`; increasing it may improve graph quality at the cost of update time.
 
+Aeon uses rust-diskann's parallel 256-node Vamana micro-batch insertion path. Outgoing graph searches and grouped reverse-edge RobustPrune work run through the configured Rayon pool; only the final deterministic mmap row writes are serialized. This is especially important for large b-bit MinHash sketches, where individual Hamming comparisons are memory-bandwidth intensive.
+
 ### Delete
 
 Deletion does not read or sketch genomes. Every line must exactly match a name stored in `PREFIX.genomes.txt`.
@@ -109,6 +111,8 @@ aeon update \
 A path may be deleted and reinserted in the same command. Names that remain in the database cannot be inserted again.
 
 `--beam-width` has the same meaning as for `insert`. Before either `delete` or `update` mutates graph data, Aeon uses rust-diskann's default routability admission check. When it defers a batch, neither the deletion nor the pending insertion is committed. Admitted deletions use the rust-diskann MERIT defaults (`repair beam = 2R`, `k_r = 2`).
+
+When an update contains insertions, it uses the same parallel Vamana micro-batch insertion path as `insert` after an admitted deletion repair.
 
 ### Search
 
