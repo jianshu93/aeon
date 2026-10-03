@@ -1849,8 +1849,8 @@ dependencies = [
 
 [[package]]
 name = "rust-diskann"
-version = "0.4.5"
-source = "git+https://github.com/jianshu93/rust-diskann#e3f9292f869abd58fa4b3ee391714822a5e807cc"
+version = "0.4.6"
+source = "git+https://github.com/jianshu93/rust-diskann#17d44b223738bb5afc0024d3a190c1d168ab393f"
 dependencies = [
  "anndists",
  "bincode",
