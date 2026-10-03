@@ -85,7 +85,7 @@ Aeon uses rust-diskann's parallel 256-node Vamana micro-batch insertion path. Ou
 
 ### Delete
 
-Deletion does not read or sketch genomes. Every line must exactly match a name stored in `PREFIX.genomes.txt`.
+Deletion does not read or sketch genomes. Each line may be either a complete stored path from `PREFIX.genomes.txt` or a unique genome filename such as `GCA_965228215.1_genomic.fna.gz`.
 
 ```bash
 aeon delete --prefix index_out --name-list delete.txt
@@ -95,7 +95,7 @@ Aeon's `rust-diskann` update session enables routability-aware deletion admissio
 
 After an admitted deletion, Aeon removes dynamic version state while committing the updated ordinary static index.
 
-`--name-list` must contain the complete stored strings from `PREFIX.genomes.txt`; matching is exact and basename-only matching is not performed.
+Complete stored paths always match. A basename without directories is accepted only when it identifies exactly one stored genome. If the database contains the same filename under multiple paths, Aeon rejects the ambiguous basename and asks for the complete stored path.
 
 ### Combined Update
 
@@ -109,6 +109,8 @@ aeon update \
 ```
 
 A path may be deleted and reinserted in the same command. Names that remain in the database cannot be inserted again.
+
+`--delete-list` follows the same complete-path-or-unique-basename rule as `--name-list`.
 
 `--beam-width` has the same meaning as for `insert`. Before either `delete` or `update` mutates graph data, Aeon uses rust-diskann's default routability admission check. When it defers a batch, neither the deletion nor the pending insertion is committed. Admitted deletions use the rust-diskann MERIT defaults (`repair beam = 2R`, `k_r = 2`).
 

@@ -87,14 +87,12 @@ pub(crate) fn update_database(
     let params = load_params(prefix)?;
     let old_genomes = read_list_file(&genomes_path(prefix))?;
     let delete_ids = resolve_delete_ids(&old_genomes, &delete_names)?;
-    let deleted_names = delete_names
-        .iter()
-        .map(String::as_str)
-        .collect::<HashSet<_>>();
+    let deleted_ids = delete_ids.iter().copied().collect::<HashSet<_>>();
     let retained_names = old_genomes
         .iter()
-        .filter(|name| !deleted_names.contains(name.as_str()))
-        .map(String::as_str)
+        .enumerate()
+        .filter(|(id, _)| !deleted_ids.contains(&(*id as u32)))
+        .map(|(_, name)| name.as_str())
         .collect::<HashSet<_>>();
     let mut inserted = HashSet::with_capacity(insert_paths.len());
     for path in &insert_paths {
@@ -281,24 +279,45 @@ pub(crate) fn search_database(
 
 fn resolve_delete_ids(genomes: &[String], names: &[String]) -> Result<Vec<u32>, Box<dyn Error>> {
     let mut by_name = HashMap::with_capacity(genomes.len());
+    let mut by_basename: HashMap<&str, Vec<u32>> = HashMap::with_capacity(genomes.len());
     for (id, name) in genomes.iter().enumerate() {
         if by_name.insert(name.as_str(), id as u32).is_some() {
             return Err(format!("database contains duplicate genome name: {name}").into());
         }
+        let basename = Path::new(name)
+            .file_name()
+            .and_then(|filename| filename.to_str())
+            .unwrap_or(name);
+        by_basename.entry(basename).or_default().push(id as u32);
     }
-    let mut seen = HashSet::with_capacity(names.len());
-    names
-        .iter()
-        .map(|name| {
-            if !seen.insert(name.as_str()) {
-                return Err(format!("delete list contains duplicate name: {name}").into());
-            }
-            by_name
-                .get(name.as_str())
-                .copied()
-                .ok_or_else(|| format!("genome name is not present in the database: {name}").into())
-        })
-        .collect()
+    let mut seen_ids = HashSet::with_capacity(names.len());
+    let mut ids = Vec::with_capacity(names.len());
+    for name in names {
+        let id = match by_name.get(name.as_str()).copied() {
+            Some(id) => id,
+            None => match by_basename.get(name.as_str()) {
+                Some(candidates) if candidates.len() == 1 => candidates[0],
+                Some(_) => {
+                    return Err(format!(
+                        "genome basename is ambiguous in the database: {name}; use its complete stored path"
+                    )
+                    .into());
+                }
+                None => {
+                    return Err(
+                        format!("genome name is not present in the database: {name}").into(),
+                    );
+                }
+            },
+        };
+        if !seen_ids.insert(id) {
+            return Err(
+                format!("delete list refers to the same genome more than once: {name}").into(),
+            );
+        }
+        ids.push(id);
+    }
+    Ok(ids)
 }
 
 fn rebuild_genome_order(
@@ -382,13 +401,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn delete_names_require_exact_matches() {
-        let genomes = vec!["/db/a.fna.gz".into(), "/db/b.fna.gz".into()];
+    fn delete_names_accept_unique_basenames_and_reject_ambiguous_ones() {
+        let genomes = vec![
+            "/db/a.fna.gz".into(),
+            "/db/b.fna.gz".into(),
+            "/other/a.fna.gz".into(),
+        ];
         assert_eq!(
             resolve_delete_ids(&genomes, &["/db/b.fna.gz".into()]).unwrap(),
             vec![1]
         );
-        assert!(resolve_delete_ids(&genomes, &["b.fna.gz".into()]).is_err());
+        assert_eq!(
+            resolve_delete_ids(&genomes, &["b.fna.gz".into()]).unwrap(),
+            vec![1]
+        );
+        assert!(resolve_delete_ids(&genomes, &["a.fna.gz".into()]).is_err());
+        assert!(resolve_delete_ids(&genomes, &["/db/b.fna.gz".into(), "b.fna.gz".into()]).is_err());
     }
 
     #[test]

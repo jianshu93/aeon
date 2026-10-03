@@ -58,7 +58,7 @@ fn build_cli() -> Command {
                         .required(true)
                         .value_name("FILE")
                         .help("Text file containing one reference FASTA/FASTQ path per line")
-                        .long_help("Text file containing one reference FASTA/FASTQ path per line. Needletail-supported compressed inputs are accepted. Paths are retained as the genome names used by search and exact deletion."),
+                        .long_help("Text file containing one reference FASTA/FASTQ path per line. Needletail-supported compressed inputs are accepted. Paths are retained as the genome names used by search and deletion."),
                 )
                 .arg(
                     Arg::new("kmer_size")
@@ -156,7 +156,7 @@ fn build_cli() -> Command {
         .subcommand(
             Command::new("delete")
                 .about("Delete sketch vectors from Vamana graph with routability-aware MERIT graph repair")
-                .long_about("The temporary DiskANN session starts with its default routability guard enabled. Before deleting exact stored genome names, Aeon virtually masks the requested batch and verifies that a small set of dispersed graph landmarks remains reachable. An admitted batch is repaired with MERIT, compacted, and committed as an ordinary static index. A deferred batch does not alter the database. Sequence files are not read during deletion.")
+                .long_about("The temporary DiskANN session starts with its default routability guard enabled. Before deleting stored genome paths or unique genome filenames, Aeon virtually masks the requested batch and verifies that a small set of dispersed graph landmarks remains reachable. An admitted batch is repaired with MERIT, compacted, and committed as an ordinary static index. A deferred batch does not alter the database. Sequence files are not read during deletion.")
                 .arg(prefix_arg())
                 .arg(
                     Arg::new("name_list")
@@ -164,8 +164,8 @@ fn build_cli() -> Command {
                         .short('d')
                         .required(true)
                         .value_name("FILE")
-                        .help("Text file containing exact names from PREFIX.genomes.txt")
-                        .long_help("Text file containing one stored genome name per line. Matching is exact, including directory components; basename-only matching is intentionally not performed."),
+                        .help("Text file containing stored paths or unique genome filenames from PREFIX.genomes.txt")
+                        .long_help("Text file containing one genome name per line. A complete stored path always matches. A filename without directories is accepted when it uniquely identifies one stored genome; use the complete path when the same filename occurs more than once."),
                 )
                 .arg(threads_arg()),
         )
@@ -180,7 +180,8 @@ fn build_cli() -> Command {
                         .short('d')
                         .required(true)
                         .value_name("FILE")
-                        .help("Text file containing exact stored genome names to delete"),
+                        .help("Text file containing stored paths or unique genome filenames to delete")
+                        .long_help("Text file containing one genome name per line. A complete stored path always matches. A filename without directories is accepted when it uniquely identifies one stored genome; use the complete path when the same filename occurs more than once."),
                 )
                 .arg(
                     Arg::new("insert_list")
