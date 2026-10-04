@@ -268,7 +268,14 @@ pub(crate) fn search_database(
         Some(path) => Box::new(BufWriter::new(File::create(path)?)),
         None => Box::new(BufWriter::new(io::stdout())),
     };
-    write_search_results(output, &queries, &hits, &references)?;
+    write_search_results(
+        output,
+        &queries,
+        &hits,
+        &references,
+        &params.seq_type,
+        params.kmer_size,
+    )?;
     eprintln!(
         "Searched {} queries in {:.3}s",
         queries.len(),
@@ -360,19 +367,40 @@ fn write_search_results(
     query_paths: &[String],
     hits: &[(usize, Vec<(u32, f32)>)],
     references: &[String],
+    seq_type: &str,
+    kmer_size: usize,
 ) -> io::Result<()> {
-    writeln!(output, "Query\tHit\tVectorID\tRawJaccard\tHammingDist")?;
+    writeln!(output, "Query\tHit\tVectorID\tRawJaccard\tHammingDist\tANI")?;
     for (query, neighbors) in hits {
         for (id, distance) in neighbors {
             let raw_jaccard = (1.0 - *distance).clamp(0.0, 1.0);
+            let ani = if seq_type.eq_ignore_ascii_case("dna") {
+                format!("{:.6}", ani_from_jaccard(raw_jaccard, kmer_size))
+            } else {
+                "NA".to_owned()
+            };
             writeln!(
                 output,
-                "{}\t{}\t{}\t{:.6}\t{:.6}",
-                query_paths[*query], references[*id as usize], id, raw_jaccard, distance
+                "{}\t{}\t{}\t{:.6}\t{:.6}\t{}",
+                query_paths[*query], references[*id as usize], id, raw_jaccard, distance, ani
             )?;
         }
     }
     Ok(())
+}
+
+/// Estimate nucleotide ANI from a MinHash-style Jaccard estimate using Mash's
+/// k-mer survival model.
+fn ani_from_jaccard(jaccard: f32, kmer_size: usize) -> f32 {
+    if kmer_size == 0 {
+        return 0.0;
+    }
+    let jaccard = jaccard.clamp(0.0, 1.0);
+    if jaccard == 0.0 {
+        return 0.0;
+    }
+    let shared_kmer_probability = (2.0 * jaccard / (1.0 + jaccard)).clamp(f32::MIN_POSITIVE, 1.0);
+    (1.0 + shared_kmer_probability.ln() / kmer_size as f32).clamp(0.0, 1.0)
 }
 
 fn sanity_check_index_mapping(
@@ -431,5 +459,20 @@ mod tests {
             rebuild_genome_order(&slots, &mapping, 3).unwrap(),
             vec!["a", "c", "d"]
         );
+    }
+
+    #[test]
+    fn ani_is_one_minus_mash_distance() {
+        let identity = 0.95_f32;
+        let shared_kmer_probability = identity.powi(16);
+        let jaccard = shared_kmer_probability / (2.0 - shared_kmer_probability);
+        let expected = 1.0 + identity.ln();
+        assert!((ani_from_jaccard(jaccard, 16) - expected).abs() < 1e-6);
+    }
+
+    #[test]
+    fn ani_is_bounded_at_extreme_jaccards() {
+        assert_eq!(ani_from_jaccard(0.0, 16), 0.0);
+        assert_eq!(ani_from_jaccard(1.0, 16), 1.0);
     }
 }

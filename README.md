@@ -129,7 +129,7 @@ aeon search \
   --output neighbors.tsv
 ```
 
-Search always opens the static index. Results contain query path, matched genome name, current vector ID, raw sketch Jaccard estimate, and normalized Hamming distance (or hash collision probability).
+Search always opens the static index. Results contain query path, matched genome name, current vector ID, raw sketch Jaccard estimate, normalized Hamming distance (or hash collision probability), and `ANI` as the final column. For DNA sketches, Aeon calculates `ANI = 1 + ln(2J / (1 + J)) / k`, where `J` is the sketch collision-derived Jaccard estimate and `k` is the stored nucleotide k-mer length. `ANI` is written as a fraction from 0 to 1; a value above `0.95` is strong evidence for an already represented species-level genome. For incomplete MAGs, a value below `0.95` does not exclude a same-species match because reduced alignment fraction also lowers Jaccard. Use the value to prioritize candidates and confirm species calls with an alignment-based ANI and alignment fraction. Amino-acid searches write `NA` because the nucleotide Mash model does not apply.
 
 Search options:
 
@@ -178,3 +178,4 @@ A combined 1% replacement (28 MERIT deletions followed by 28 insertions and one 
 - Wu et.al., 2026. *MERIT: Efficient In-Place Deletion for Dynamic Graph-Based Approximate Nearest Neighbor Indexes*. arXiv preprint arXiv:2607.29173.
 - Li et.al., 2012. *One permutation hashing*. Advances in Neural Information Processing Systems 25.
 - Li et al., 2010. *b-Bit Minwise Hashing*. WWW 2010.
+- Ondov et al., 2016. *Mash: Fast genome and metagenome distance estimation using MinHash*. Genome Biology 17:132.
